@@ -201,26 +201,26 @@ function shiftWeek(iso, delta){
 // ---------- puente hacia la API de Google Apps Script ----------
 // PEGA AQUÍ la URL que te entrega Apps Script en "Implementar > Aplicación web"
 // Debe terminar en /exec . Ejemplo: https://script.google.com/macros/s/AKfycb.../exec
-const API_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
+const API_URL = "https://script.google.com/macros/s/AKfycbw3NyIMyLHl47AAKGsFjueuy5fQ-vfe4xN0PUxLmpLevYCkzlgE_0tF_oZeira_EzZjwA/exec";
 
 async function apiGet(action, params){
   params = params || {};
-  const qs = new URLSearchParams(Object.assign({action:action}, params)).toString();
+  // los items (arreglos/objetos) se codifican como texto JSON dentro de la URL
+  const flatParams = {};
+  Object.keys(params).forEach(k=>{
+    const v = params[k];
+    flatParams[k] = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : v;
+  });
+  const qs = new URLSearchParams(Object.assign({action:action}, flatParams)).toString();
   const res = await fetch(API_URL + "?" + qs);
   const data = await res.json();
   if(data && data.error) throw new Error(data.error);
   return data;
 }
+// apiPost ahora usa el mismo mecanismo GET que apiGet (ver nota en Code.gs sobre
+// por qué se dejó de usar POST directo con Apps Script llamado desde fetch()).
 async function apiPost(action, payload){
-  payload = payload || {};
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // evita el preflight CORS
-    body: JSON.stringify(Object.assign({action:action}, payload))
-  });
-  const data = await res.json();
-  if(data && data.error) throw new Error(data.error);
-  return data;
+  return apiGet(action, payload);
 }
 
 // gsRun mantiene la misma forma de llamada que antes (fnName, ...args) para no
